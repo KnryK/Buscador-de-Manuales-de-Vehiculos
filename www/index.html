@@ -1,0 +1,2988 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manual de Auto — Buscador Inteligente</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:        #f5f7fa;
+  --s1:        #ffffff;
+  --s2:        #f0f2f5;
+  --s3:        #e5e7eb;
+  --border:    #d9dee7;
+  --border-hi: #b8c0ce;
+  --text:      #1f2937;
+  --muted:     #667085;
+  --amber:     #f59e0b;
+  --amber-lo:  rgba(245,158,11,.12);
+  --green:     #34d399;
+  --green-lo:  rgba(52,211,153,.12);
+  --blue:      #60a5fa;
+  --blue-lo:   rgba(96,165,250,.12);
+  --red:       #f87171;
+  --radius:    13px;
+  --trans:     .15s ease;
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body {
+  font-family:'Inter',system-ui,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+  min-height:100vh;
+  font-size:14px;
+  line-height:1.55;
+}
+
+/* ── HEADER ── */
+.header {
+  position:sticky; top:0; z-index:50;
+  background:rgba(255,255,255,.92);
+  backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border);
+  padding:12px 20px;
+  display:flex; align-items:center; gap:11px;
+}
+.hlogo {
+  width:36px; height:36px;
+  background:transparent;
+  border:0;
+  border-radius:9px;
+  display:flex; align-items:center; justify-content:center;
+  overflow:hidden;
+}
+.hlogo img {
+  width:29px;
+  height:29px;
+  object-fit:contain;
+  display:block;
+}
+.htitle  { font-size:15px; font-weight:700; letter-spacing:-.2px; }
+.hsub    { font-size:11px; color:var(--muted); margin-top:1px; }
+
+/* ── CONTAINER ── */
+.wrap {
+  max-width:640px;
+  margin:0 auto;
+  padding:32px 16px 60px;
+}
+
+/* ── SCREENS ── */
+.screen { display:none; }
+.screen.on { display:block; }
+
+/* ── SCREEN 1 · SELECTION ── */
+.sel-eyebrow {
+  font-size:11px; font-weight:600; letter-spacing:.08em;
+  text-transform:uppercase; color:var(--muted);
+  margin-bottom:6px;
+}
+.sel-title { font-size:22px; font-weight:700; margin-bottom:4px; }
+.sel-sub   { font-size:13px; color:var(--muted); margin-bottom:24px; }
+
+.card {
+  background:var(--s1);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:22px;
+}
+
+.fgroup { margin-bottom:18px; }
+.fgroup:last-of-type { margin-bottom:22px; }
+
+.flabel {
+  display:flex; align-items:center; gap:8px;
+  font-size:11px; font-weight:600;
+  text-transform:uppercase; letter-spacing:.07em;
+  color:var(--muted); margin-bottom:8px;
+}
+.fnum {
+  width:20px; height:20px;
+  background:var(--amber); color:#000;
+  border-radius:50%;
+  font-size:10px; font-weight:800;
+  display:inline-flex; align-items:center; justify-content:center;
+}
+
+.selwrap { position:relative; }
+select {
+  width:100%; padding:10px 36px 10px 14px;
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:9px;
+  color:var(--text); font-family:inherit; font-size:14px;
+  appearance:none; cursor:pointer;
+  transition:border-color var(--trans);
+}
+select:disabled { opacity:.38; cursor:default; }
+select:not(:disabled):hover { border-color:var(--border-hi); }
+select:focus { outline:none; border-color:var(--amber); }
+.selwrap::after {
+  content:''; position:absolute; right:13px; top:50%;
+  transform:translateY(-50%);
+  border-left:4px solid transparent;
+  border-right:4px solid transparent;
+  border-top:5px solid var(--muted);
+  pointer-events:none;
+}
+
+.btn-go {
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  width:100%; padding:12px;
+  background:var(--amber); color:#000;
+  border:none; border-radius:9px;
+  font-family:inherit; font-size:14px; font-weight:700;
+  cursor:pointer; transition:opacity var(--trans), transform var(--trans);
+}
+.btn-go:disabled { opacity:.3; cursor:default; }
+.btn-go:not(:disabled):hover  { opacity:.9; }
+.btn-go:not(:disabled):active { transform:scale(.98); }
+
+.err-box {
+  margin-top:14px; padding:12px 16px;
+  background:rgba(248,113,113,.08);
+  border:1px solid rgba(248,113,113,.25);
+  border-radius:9px;
+  font-size:13px; color:#fca5a5;
+  display:none;
+}
+
+/* ── SCREEN 2 · LOADING ── */
+.load-center {
+  padding:52px 16px;
+  text-align:center;
+}
+.load-car {
+  width:56px;
+  height:56px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin:0 auto 10px;
+  animation:glide 1.8s ease-in-out infinite alternate;
+}
+.load-car img {
+  width:58px;
+  height:58px;
+  object-fit:contain;
+  display:block;
+}
+@keyframes glide {
+  from { transform:translateX(-16px); }
+  to   { transform:translateX(16px);  }
+}
+.load-road {
+  height:3px; border-radius:2px; max-width:180px;
+  margin:0 auto 28px;
+  background:linear-gradient(90deg,transparent,var(--amber) 50%,transparent);
+  animation:road 1.8s ease-in-out infinite;
+}
+@keyframes road {
+  0%,100% { opacity:.25; } 50% { opacity:1; }
+}
+.load-title { font-size:18px; font-weight:700; margin-bottom:28px; }
+
+.psteps {
+  display:inline-flex; flex-direction:column; gap:13px;
+  text-align:left;
+}
+.pstep {
+  display:flex; align-items:center; gap:10px;
+  font-size:13px; color:var(--muted);
+  transition:color var(--trans);
+}
+.pstep.active { color:var(--text); }
+.pstep.done   { color:var(--green); }
+.pdot {
+  width:26px; height:26px; border-radius:50%; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:11px; font-weight:700;
+  background:var(--s2); color:var(--muted);
+  transition:all var(--trans);
+}
+.pstep.active .pdot {
+  background:var(--amber); color:#000;
+  animation:pulse 1s ease-in-out infinite;
+}
+.pstep.done .pdot { background:var(--green); color:#000; }
+@keyframes pulse {
+  0%,100% { box-shadow:0 0 0 0 rgba(245,158,11,.5); }
+  50%      { box-shadow:0 0 0 7px rgba(245,158,11,0); }
+}
+
+/* ── SCREEN 3 · RESULTS ── */
+.back-btn {
+  display:inline-flex; align-items:center; gap:5px;
+  background:none; border:none; cursor:pointer;
+  color:var(--muted); font-family:inherit; font-size:13px;
+  padding:0; margin-bottom:20px;
+  transition:color var(--trans);
+}
+.back-btn:hover { color:var(--text); }
+
+.vehicle-card {
+  background:var(--s1); border:1px solid var(--border);
+  border-radius:var(--radius); padding:16px 20px;
+  display:flex; align-items:center; gap:14px;
+  margin-bottom:8px;
+}
+.veh-icon {
+  width:48px; height:48px;
+  background:transparent;
+  border:0;
+  border-radius:11px;
+  display:flex; align-items:center; justify-content:center;
+  overflow:hidden;
+  flex-shrink:0;
+}
+.veh-icon img {
+  width:38px;
+  height:38px;
+  object-fit:contain;
+  display:block;
+}
+.veh-name { font-size:17px; font-weight:700; }
+.veh-sub  { font-size:12px; color:var(--muted); margin-top:2px; }
+.vehicle-actions {
+  margin-left:auto;
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:7px;
+  flex-shrink:0;
+}
+.veh-badge {
+  font-size:10px; font-weight:700; letter-spacing:.06em;
+  text-transform:uppercase;
+  padding:4px 10px; border-radius:20px;
+  background:var(--green-lo); color:var(--green);
+  border:1px solid rgba(52,211,153,.25);
+}
+.startmycar-badge {
+  font-family:inherit;
+  cursor:pointer;
+  transition:opacity var(--trans), border-color var(--trans), color var(--trans);
+}
+.startmycar-badge:hover {
+  opacity:.9;
+  border-color:var(--green);
+}
+.res-intro { font-size:13px; color:var(--muted); margin:20px 0 10px; }
+
+/* ── RESULT CARDS ── */
+
+/* ── PDF VIEWER ── */
+.viewer-head {
+  margin:18px 0 10px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.viewer-title { font-size:14px; font-weight:700; }
+.viewer-meta { font-size:11px; color:var(--muted); margin-top:2px; }
+
+.query-bar {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+  margin-bottom:10px;
+}
+.query-btn {
+  min-width:0;
+  border:1px solid var(--border);
+  background:var(--s1);
+  color:var(--text);
+  border-radius:11px;
+  min-height:64px;
+  padding:7px;
+  display:grid;
+  grid-template-columns:1fr auto;
+  align-items:stretch;
+  gap:8px;
+  transition:border-color var(--trans),background var(--trans),box-shadow var(--trans);
+  font-family:inherit;
+}
+.query-btn.active {
+  border-color:var(--amber);
+  background:var(--amber-lo);
+  box-shadow:0 0 0 1px rgba(245,158,11,.08) inset;
+}
+.query-main {
+  min-width:0;
+  border:0;
+  background:transparent;
+  color:inherit;
+  font-family:inherit;
+  cursor:default;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  gap:4px;
+}
+.query-title-row {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  width:100%;
+  font-family:inherit;
+}
+.query-main .query-label {
+  font-size:11px;
+  line-height:1.2;
+  text-align:left;
+  font-weight:650;
+  font-family:inherit;
+}
+.query-main .query-count { font-size:10px; color:var(--muted); font-family:inherit; }
+.query-fnum {
+  flex:0 0 20px;
+}
+.query-arrow {
+  width:32px;
+  min-width:32px;
+  height:32px;
+  border:1px solid var(--border);
+  border-radius:7px;
+  background:var(--s2);
+  color:var(--muted);
+  font:700 15px/1 inherit;
+  cursor:pointer;
+  transition:all var(--trans);
+}
+.query-arrow:hover:not(:disabled) {
+  color:var(--amber);
+  border-color:var(--amber);
+  background:var(--amber-lo);
+}
+.query-arrow:disabled { opacity:.3; cursor:default; }
+.query-arrow:active:not(:disabled) { transform:scale(.95); }
+.query-btn.empty { opacity:.55; }
+
+.pdf-shell {
+  border:1px solid var(--border);
+  border-radius:12px;
+  overflow:hidden;
+  background:#dfe3e8;
+}
+.pdf-viewport {
+  height:75vh;
+  min-height:640px;
+  background:#e7eaee;
+  position:relative;
+}
+#pdf-page-area {
+  min-height:100%;
+  padding:22px 12px 30px;
+  display:block;
+  overflow:auto;
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+  cursor:grab;
+  touch-action:none;
+}
+#pdf-page-area.dragging {
+  cursor:grabbing;
+}
+#pdf-canvas {
+  display:block;
+  background:#fff;
+  box-shadow:0 2px 12px rgba(15,23,42,.16);
+  max-width:none;
+  height:auto;
+  user-select:none;
+  -webkit-user-select:none;
+  pointer-events:none;
+  margin:0 auto;
+}
+.pdf-toolbar {
+  min-height:48px;
+  padding:7px 8px;
+  display:flex;
+  align-items:center;
+  gap:5px;
+  background:#f8fafc;
+  border-bottom:1px solid var(--border);
+}
+.pdf-tool {
+  height:32px;
+  min-width:32px;
+  padding:0 9px;
+  border:1px solid var(--border);
+  border-radius:7px;
+  background:var(--s1);
+  color:var(--text);
+  font-family:inherit;
+  font-size:12px;
+  cursor:pointer;
+  transition:all var(--trans);
+}
+
+.pdf-camera-tool {
+  width:32px;
+  min-width:32px;
+  padding:0;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size:15px;
+  line-height:1;
+}
+
+.pdf-tool:hover:not(:disabled) {
+  border-color:var(--amber);
+  color:var(--amber);
+  background:var(--amber-lo);
+}
+.pdf-tool:disabled {
+  opacity:.35;
+  cursor:default;
+}
+.pdf-toolbar-spacer { flex:1; }
+.pdf-page-box {
+  height:32px;
+  display:flex;
+  align-items:center;
+  gap:5px;
+  padding:0 7px;
+  border:1px solid var(--border);
+  border-radius:7px;
+  background:var(--s1);
+  color:var(--muted);
+  font-size:12px;
+}
+#pdf-page-input {
+  width:52px;
+  border:0;
+  outline:0;
+  background:transparent;
+  color:var(--text);
+  font:600 12px inherit;
+  text-align:center;
+}
+#pdf-page-input::-webkit-inner-spin-button,
+#pdf-page-input::-webkit-outer-spin-button { opacity:1; }
+.pdf-loading {
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  color:var(--muted);
+  background:rgba(255,255,255,.96);
+  z-index:2;
+}
+.pdf-loading.hidden { display:none; }
+.pdf-spinner {
+  width:28px;
+  height:28px;
+  border:3px solid rgba(255,255,255,.12);
+  border-top-color:var(--amber);
+  border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg); } }
+
+.viewer-note {
+  margin-top:8px;
+  padding:10px 12px;
+  border:1px solid var(--border);
+  border-radius:9px;
+  background:var(--s1);
+  color:var(--muted);
+  font-size:11px;
+}
+
+.youtube-search-btn {
+  margin-top:8px;
+}
+
+.results-new-search {
+  width:100%;
+  margin-top:14px;
+}
+
+.nav-row {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  width:100%;
+  margin-top:14px;
+}
+
+@media (max-width:640px) {
+  .query-bar { grid-template-columns:1fr; }
+  .query-btn { min-height:58px; }
+  .query-main { flex-direction:row; }
+  .query-main .query-label { flex:1; text-align:left; }
+  .query-arrows { align-items:center; }
+  .pdf-viewport { min-height:520px; height:70vh; }
+  .viewer-head { align-items:flex-start; }
+  .viewer-head .act-btn { white-space:nowrap; }
+  .vehicle-actions { align-items:flex-end; }
+
+}
+
+/* ── FOOTER ── */
+.pdf-footer { text-align:center; margin-top:22px; }
+.full-pdf-link {
+  display:inline-flex; align-items:center; gap:7px;
+  padding:10px 20px;
+  background:var(--s2); border:1px solid var(--border);
+  border-radius:9px; color:var(--muted);
+  font-size:13px; text-decoration:none;
+  transition:all var(--trans);
+}
+.full-pdf-link:hover { border-color:var(--border-hi); color:var(--text); }
+
+/* ── UTIL ── */
+[hidden] { display:none !important; }
+
+/* ── PRUEBA DEL PUENTE NATIVO ANDROID ── */
+
+
+.vehicle-type-icon {
+  width: 176px;
+  height: 176px;
+  object-fit: contain;
+  display: block;
+  flex: 0 0 auto;
+}
+
+
+
+/* ═══════════ EDITOR INTEGRADO · SCREEN 4 ═══════════ */
+/* ── PANELS ── */
+.panels {
+  display:flex;
+  gap:12px;
+  margin-bottom:20px;
+  align-items:flex-start;
+}
+
+.panel {
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.panel-label {
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.09em;
+  text-transform:uppercase;
+  color:var(--muted);
+  text-align:center;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+}
+
+.fnum {
+  width:18px; height:18px;
+  background:var(--amber); color:#000;
+  border-radius:50%;
+  font-size:9px; font-weight:800;
+  display:inline-flex; align-items:center; justify-content:center;
+  flex-shrink:0;
+}
+
+/* 9:16 ratio box */
+.image-box-wrap {
+  position:relative;
+  width:100%;
+  padding-top:calc(100% * 16 / 9);
+  border-radius:11px;
+  overflow:hidden;
+  border:2px dashed var(--border);
+  cursor:pointer;
+  transition:border-color var(--trans);
+  background:var(--s2);
+}
+
+.image-box-wrap.has-image {
+  border-style:solid;
+  border-color:var(--border);
+}
+
+.image-box-wrap:active { opacity:.85; }
+
+.image-box-inner {
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+}
+
+.image-placeholder-icon {
+  width:28px; height:28px;
+  color:var(--muted);
+  opacity:.5;
+}
+
+.image-placeholder-text {
+  font-size:0.6rem;
+  font-weight:600;
+  color:var(--muted);
+  text-align:center;
+  padding:0 8px;
+}
+
+.img-canvas {
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  display:none;
+  border-radius:9px;
+}
+
+.img-canvas.active { display:block; }
+
+/* ── PANEL BUTTONS ── */
+.panel-controls {
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.btn {
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding:10px 8px;
+  border:none;
+  border-radius:9px;
+  font-size:0.7rem;
+  font-weight:700;
+  cursor:pointer;
+  font-family:'Inter',system-ui,sans-serif;
+  transition:opacity var(--trans), transform var(--trans);
+  width:100%;
+  letter-spacing:.01em;
+}
+
+.btn:active  { opacity:.8; transform:scale(.97); }
+.btn:disabled { opacity:.3; cursor:default; }
+
+.btn-secondary {
+  background:var(--s2);
+  color:var(--text);
+  border:1px solid var(--border);
+}
+.btn-secondary:not(:disabled):hover { border-color:var(--border-hi); }
+
+.btn-draw-active {
+  background:var(--amber);
+  color:#000;
+  border:1px solid var(--amber);
+}
+
+/* ── DRAW TOOLBAR ── */
+.draw-toolbar {
+  display:none;
+  flex-direction:column;
+  gap:8px;
+  background:var(--s2);
+  border:1px solid var(--border);
+  border-radius:9px;
+  padding:10px;
+}
+
+.draw-toolbar.visible { display:flex; }
+
+.draw-toolbar label {
+  font-size:9px;
+  color:var(--muted);
+  font-weight:700;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+.color-row {
+  display:flex;
+  gap:8px;
+  align-items:center;
+}
+
+.color-swatch {
+  width:26px; height:26px;
+  border-radius:50%;
+  cursor:pointer;
+  border:3px solid transparent;
+  transition:border-color var(--trans);
+  flex-shrink:0;
+}
+
+.color-swatch.selected { border-color:var(--text); }
+.swatch-red   { background:#e63946; }
+.swatch-white { background:#ffffff; outline:1px solid var(--border); }
+
+input[type=range] {
+  width:100%;
+  accent-color:var(--amber);
+  cursor:pointer;
+}
+
+.size-preview-wrap {
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.size-preview {
+  background:var(--text);
+  border-radius:50%;
+  flex-shrink:0;
+  transition:width .1s,height .1s;
+}
+
+.btn-undo {
+  background:var(--s1);
+  color:var(--text);
+  border:1px solid var(--border);
+  font-size:0.65rem;
+  padding:7px;
+  border-radius:7px;
+  font-family:'Inter',system-ui,sans-serif;
+  font-weight:600;
+  cursor:pointer;
+  transition:border-color var(--trans);
+  width:100%;
+}
+.btn-undo:hover { border-color:var(--border-hi); }
+
+.divider-line {
+  height:1px;
+  background:var(--border);
+  margin:2px 0;
+}
+
+/* ── TEXT MODAL ── */
+.modal-overlay {
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(31,41,55,.55);
+  z-index:100;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+}
+
+.modal-overlay.visible { display:flex; }
+
+.modal {
+  background:var(--s1);
+  border-radius:var(--radius);
+  padding:22px;
+  width:100%;
+  max-width:380px;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  border:1px solid var(--border);
+  box-shadow:0 8px 32px rgba(0,0,0,.12);
+}
+
+.modal h3 {
+  font-size:15px;
+  font-weight:700;
+  color:var(--text);
+}
+
+.modal textarea {
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:9px;
+  color:var(--text);
+  font-family:'Inter',system-ui,sans-serif;
+  font-size:14px;
+  padding:10px 12px;
+  resize:none;
+  min-height:80px;
+  width:100%;
+  transition:border-color var(--trans);
+}
+
+.modal textarea:focus { outline:none; border-color:var(--amber); }
+
+.font-row {
+  display:flex; align-items:center; gap:8px;
+}
+.font-row label {
+  font-size:11px; font-weight:600; color:var(--muted);
+  text-transform:uppercase; letter-spacing:.07em;
+  white-space:nowrap;
+}
+.font-row input[type=range] { flex:1; }
+.font-row span {
+  font-size:11px; color:var(--muted); min-width:30px; text-align:right;
+}
+
+.modal-actions { display:flex; gap:8px; }
+
+.btn-cancel  {
+  background:var(--s2); color:var(--text);
+  border:1px solid var(--border); flex:1;
+  padding:10px; border-radius:9px;
+  font-family:'Inter',system-ui,sans-serif;
+  font-size:13px; font-weight:600; cursor:pointer;
+  transition:border-color var(--trans);
+}
+.btn-cancel:hover { border-color:var(--border-hi); }
+
+.btn-confirm {
+  background:var(--amber); color:#000; flex:1;
+  border:none; padding:10px; border-radius:9px;
+  font-family:'Inter',system-ui,sans-serif;
+  font-size:13px; font-weight:700; cursor:pointer;
+  transition:opacity var(--trans);
+}
+.btn-confirm:hover { opacity:.9; }
+
+/* ── TOAST ── */
+.toast {
+  position:fixed;
+  bottom:24px; left:50%;
+  transform:translateX(-50%) translateY(80px);
+  background:var(--text);
+  color:#fff;
+  padding:10px 20px;
+  border-radius:999px;
+  font-size:12px; font-weight:600;
+  transition:transform .3s;
+  z-index:200;
+  white-space:nowrap;
+  box-shadow:0 4px 20px rgba(0,0,0,.2);
+  pointer-events:none;
+}
+.toast.show { transform:translateX(-50%) translateY(0); }
+
+/* ── RESULT OVERLAY ── */
+.result-overlay {
+  display:none;
+  position:fixed;
+  inset:0;
+  background:rgba(31,41,55,.88);
+  z-index:150;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  gap:16px;
+}
+
+.result-overlay.visible { display:flex; }
+
+.result-overlay img {
+  max-width:100%;
+  max-height:68vh;
+  border-radius:var(--radius);
+  object-fit:contain;
+  border:1px solid var(--border);
+}
+
+.result-overlay h2 {
+  color:#fff;
+  font-size:16px;
+  font-weight:700;
+}
+
+.result-overlay p {
+  color:rgba(255,255,255,.55);
+  font-size:12px;
+  text-align:center;
+}
+
+.result-actions { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; }
+
+.btn-download {
+  background:var(--amber); color:#000;
+  border:none; padding:12px 24px;
+  border-radius:9px;
+  font-family:'Inter',system-ui,sans-serif;
+  font-size:13px; font-weight:700; cursor:pointer;
+  display:flex; align-items:center; gap:6px;
+  transition:opacity var(--trans);
+}
+.btn-download:hover { opacity:.9; }
+
+.btn-close-res {
+  background:rgba(255,255,255,.1); color:#fff;
+  border:1px solid rgba(255,255,255,.2);
+  padding:12px 24px; border-radius:9px;
+  font-family:'Inter',system-ui,sans-serif;
+  font-size:13px; font-weight:600; cursor:pointer;
+  transition:background var(--trans);
+}
+.btn-close-res:hover { background:rgba(255,255,255,.18); }
+
+/* ── SEPARADOR SCREEN 4 ── */
+.editor-nav-separator {
+  height:1px;
+  background:var(--border);
+  margin:18px 0 4px;
+}
+
+/* ── HIDDEN ── */
+#scr-edit input[type=file] { display:none; }
+
+
+</style>
+</head>
+<body>
+
+<header class="header">
+  <div class="hlogo"><img src="icono.png" alt="AutoManuales"></div>
+  <div>
+    <div class="htitle">AutoManuales</div>
+    <div class="hsub">Búsqueda automatizada de manuales de vehículos.</div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ═══════════ SCREEN 1: SELECCIÓN ═══════════ -->
+  <section id="scr-sel" class="screen on">
+    <p class="sel-eyebrow">Paso 1 de 3</p>
+    <h1 class="sel-title">Identificación del Vehículo</h1>
+    <p class="sel-sub">Selecciona un vehículo para encontrar el manual del propietario de forma automatizada.</p>
+
+    <div class="card">
+      <div class="fgroup">
+        <div class="flabel"><span class="fnum">1</span> Fabricante</div>
+        <div class="selwrap">
+          <select id="make-sel" onchange="onMakeChange()">
+            <option value="">Selecciona un fabricante…</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="fgroup">
+        <div class="flabel"><span class="fnum">2</span> Modelo</div>
+        <div class="selwrap">
+          <select id="model-sel" disabled onchange="onModelChange()">
+            <option value="">— Elige primero un fabricante —</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="fgroup">
+        <div class="flabel"><span class="fnum">3</span> Año</div>
+        <div class="selwrap">
+          <select id="year-sel" disabled onchange="onYearChange()">
+            <option value="">— Elige primero un modelo —</option>
+          </select>
+        </div>
+      </div>
+
+      <button id="go-btn" class="btn-go" onclick="doSearch()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        Buscar Manual
+      </button>
+    </div>
+
+
+
+    <div class="err-box" id="sel-err"></div>
+
+    <div class="nav-row" style="justify-content:flex-end;">
+      <button class="back-btn" onclick="goToResultados()">
+        Siguiente Paso
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </section>
+
+  <!-- ═══════════ SCREEN 2: CARGANDO ═══════════ -->
+  <section id="scr-load" class="screen">
+    <div class="load-center">
+      <span class="load-car"><img src="icono.png" alt=""></span>
+      <div class="load-road"></div>
+      <div class="load-title">Buscando tu manual…</div>
+
+      <div class="psteps">
+        <div class="pstep" id="ps1">
+          <div class="pdot">1</div>
+          <span>Buscando en startmycar.com</span>
+        </div>
+        <div class="pstep" id="ps2">
+          <div class="pdot">2</div>
+          <span>Localizando el PDF del manual</span>
+        </div>
+        <div class="pstep" id="ps3">
+          <div class="pdot">3</div>
+          <span>Analizando el contenido del manual</span>
+        </div>
+        <div class="pstep" id="ps4">
+          <div class="pdot">4</div>
+          <span>Preparando resultados</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ═══════════ SCREEN 3: RESULTADOS ═══════════ -->
+  <section id="scr-res" class="screen">
+    <p class="sel-eyebrow">Paso 2 de 3</p>
+    <h1 class="sel-title">Identificación de Recursos</h1>
+    <p class="sel-sub">Busca la ubicación de la etiqueta VIN en el manual del propietario y lee cómo desmontar la tapa de gasolina.</p>
+
+    <div class="vehicle-card">
+      <div class="veh-icon" id="vehicle-type-icon"></div>
+      <div style="min-width:0; flex:1;">
+        <div class="veh-name" id="veh-name"></div>
+        <div class="veh-sub">Manual del Propietario</div>
+      </div>
+      <div class="vehicle-actions">
+        <div class="veh-badge">✓ Encontrado</div>
+        <button class="veh-badge startmycar-badge" id="open-startmycar" type="button">֎ StartMyCar</button>
+      </div>
+    </div>
+    <div class="viewer-head">
+      <div>
+        <div class="viewer-title">Manual del Propietario</div>
+        <div class="viewer-meta" id="viewer-meta">Cargando PDF…</div>
+      </div>
+    </div>
+
+    <div class="query-bar" id="query-bar">
+      <div class="query-btn empty" data-key="vin">
+        <div class="query-main">
+          <div class="query-title-row">
+            <span class="fnum query-fnum">1</span>
+            <span class="query-label">Etiqueta de Identificación</span>
+          </div>
+          <span class="query-count" id="hit-vin">Sin coincidencias</span>
+        </div>
+        <div class="query-arrows">
+          <button class="query-arrow" type="button" data-dir="prev" onclick="navigateMatch('vin',-1)" aria-label="Coincidencia anterior">‹</button>
+          <button class="query-arrow" type="button" data-dir="next" onclick="navigateMatch('vin',1)" aria-label="Siguiente coincidencia">›</button>
+        </div>
+      </div>
+
+      <div class="query-btn empty" data-key="fuel">
+        <div class="query-main">
+          <div class="query-title-row">
+            <span class="fnum query-fnum">2</span>
+            <span class="query-label">Tapa de Gasolina</span>
+          </div>
+          <span class="query-count" id="hit-fuel">Sin coincidencias</span>
+        </div>
+        <div class="query-arrows">
+          <button class="query-arrow" type="button" data-dir="prev" onclick="navigateMatch('fuel',-1)" aria-label="Coincidencia anterior">‹</button>
+          <button class="query-arrow" type="button" data-dir="next" onclick="navigateMatch('fuel',1)" aria-label="Siguiente coincidencia">›</button>
+        </div>
+      </div>
+
+      <div class="query-btn empty" data-key="trailer">
+        <div class="query-main">
+          <div class="query-title-row">
+            <span class="fnum query-fnum">3</span>
+            <span class="query-label">Gancho de Remolque</span>
+          </div>
+          <span class="query-count" id="hit-trailer">Sin coincidencias</span>
+        </div>
+        <div class="query-arrows">
+          <button class="query-arrow" type="button" data-dir="prev" onclick="navigateMatch('trailer',-1)" aria-label="Coincidencia anterior">‹</button>
+          <button class="query-arrow" type="button" data-dir="next" onclick="navigateMatch('trailer',1)" aria-label="Siguiente coincidencia">›</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="pdf-shell">
+      <div class="pdf-toolbar">
+        <button class="pdf-tool" id="pdf-prev" type="button" aria-label="Página anterior">◀</button>
+
+        <div class="pdf-page-box">
+          <input id="pdf-page-input" type="number" min="1" value="1" aria-label="Número de página">
+          <span>/</span>
+          <span id="pdf-page-total">—</span>
+        </div>
+
+        <button class="pdf-tool" id="pdf-next" type="button" aria-label="Página siguiente">▶</button>
+
+        <div class="pdf-toolbar-spacer"></div>
+
+        <button class="pdf-tool pdf-camera-tool" id="take-photo-btn" type="button" aria-label="Tomar foto" title="Tomar foto" onclick="takePhoto()">📷</button>
+        <button class="pdf-tool" id="pdf-print" type="button" aria-label="Imprimir o guardar páginas" title="Imprimir o guardar páginas" onclick="printCurrentPdf()">💾</button>
+        <button class="pdf-tool" id="pdf-zoom-out" type="button" aria-label="Alejar">−</button>
+        <button class="pdf-tool" id="pdf-zoom-in" type="button" aria-label="Acercar">＋</button>
+      </div>
+
+      <div class="pdf-viewport" id="pdf-viewport">
+        <div class="pdf-loading" id="pdf-loading">
+          <div class="pdf-spinner"></div>
+          <div id="pdf-loading-text">Preparando visor PDF…</div>
+        </div>
+        <div class="pdf-page-area" id="pdf-page-area">
+          <canvas id="pdf-canvas"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="viewer-note" id="viewer-note">
+      ℹ️ El PDF se visualiza en memoria. No se guarda una copia del manual en tu equipo.
+    </div>
+
+    <button class="btn-go youtube-search-btn" id="youtube-fuel-btn" type="button" onclick="handleYouTubeSearch()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      Buscar Video Tutorial
+    </button>
+
+    <div class="nav-row">
+      <button class="back-btn" onclick="goBack()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        Nueva búsqueda
+      </button>
+      <button class="back-btn" onclick="goToFoto()">
+        Siguiente Paso
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </button>
+    </div>
+  </section>
+
+
+  <!-- ═══════════ SCREEN 4: EDICIÓN ═══════════ -->
+  <section id="scr-edit" class="screen">
+    <div class="sel-eyebrow">Paso 3 de 3</div>
+    <div class="sel-title">Registro de Evidencias</div>
+    <div class="sel-sub">Agrega, edita y combina fotos del procedimiento. Cuando estés listo, guarda la imagen final en la galería.</div>
+
+    <input type="file" id="input1" accept="image/*">
+    <input type="file" id="input2" accept="image/*">
+
+
+
+<!-- Image panels -->
+  <div class="card" style="margin-bottom:14px;">
+    <div class="panels">
+
+      <!-- Panel 1 -->
+      <div class="panel">
+        <div class="panel-label">
+          <span class="fnum">1</span> Foto principal
+        </div>
+        <div class="image-box-wrap" id="box1" onclick="triggerUpload(1)">
+          <div class="image-box-inner" id="placeholder1">
+            <svg class="image-placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="3"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <path d="M21 15l-5-5L5 21"/>
+            </svg>
+            <div class="image-placeholder-text">Agregar Imagen</div>
+          </div>
+          <canvas id="canvas1" class="img-canvas"></canvas>
+        </div>
+        <div class="panel-controls">
+          <button class="btn btn-secondary" id="btnText1" onclick="openTextModal()" disabled>
+            📝 Agregar texto
+          </button>
+          <button class="btn-undo" id="btnUndoText" onclick="undoText()" style="display:none">
+            ↩ Deshacer texto
+          </button>
+        </div>
+      </div>
+
+      <!-- Panel 2 -->
+      <div class="panel">
+        <div class="panel-label">
+          <span class="fnum">2</span> Foto de detalle
+        </div>
+        <div class="image-box-wrap" id="box2" onclick="triggerUpload(2)">
+          <div class="image-box-inner" id="placeholder2">
+            <svg class="image-placeholder-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+              <rect x="3" y="3" width="18" height="18" rx="3"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <path d="M21 15l-5-5L5 21"/>
+            </svg>
+            <div class="image-placeholder-text">Agregar Imagen</div>
+          </div>
+          <canvas id="canvas2" class="img-canvas"></canvas>
+        </div>
+        <div class="panel-controls">
+          <button class="btn btn-secondary" id="btnDraw" onclick="toggleDraw()" disabled>
+            ✍🏻 Dibujar
+          </button>
+          <div class="draw-toolbar" id="drawToolbar">
+            <label>Color</label>
+            <div class="color-row">
+              <div class="color-swatch swatch-red selected" id="swatchRed" onclick="setColor('red')"></div>
+              <div class="color-swatch swatch-white" id="swatchWhite" onclick="setColor('white')"></div>
+              <span style="font-size:10px;color:var(--muted);margin-left:2px;">Rojo / Blanco</span>
+            </div>
+            <div class="divider-line"></div>
+            <label>Grosor del lápiz</label>
+            <div class="size-preview-wrap">
+              <input type="range" id="brushSize" min="2" max="24" value="5" oninput="updateBrushPreview()">
+              <div class="size-preview" id="brushPreview" style="width:5px;height:5px;"></div>
+            </div>
+            <button class="btn-undo" onclick="undoStroke()">↩ Deshacer trazo</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Finish button — mismo estilo btn-go que "Buscar Manual" / "Buscar Video Tutorial" -->
+  <button class="btn-go" onclick="finishWork()">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+    </svg>
+    Finalizar Trabajo
+  </button>
+
+  <!-- Botón volver — mismo estilo que "Nueva búsqueda" en index.html -->
+  <button class="back-btn" style="margin-top:20px" onclick="showScr('res'); window.scrollTo(0,0)">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Paso Anterior
+  </button>
+
+
+  </section>
+
+</main>
+
+<!-- Text Modal -->
+<div class="modal-overlay" id="textModal">
+  <div class="modal">
+    <h3>📝 Agregar texto a Foto 1</h3>
+    <textarea id="textInput" placeholder="Escribe el texto que aparecerá en la parte inferior…" rows="3"></textarea>
+    <div class="font-row">
+      <label>Tamaño</label>
+      <input type="range" id="fontSize" min="12" max="48" value="22" oninput="document.getElementById('fontSizeVal').textContent=this.value+'px'">
+      <span id="fontSizeVal">22px</span>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeTextModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="applyText()">Aplicar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Result Overlay -->
+<div class="result-overlay" id="resultOverlay">
+  <h2>Imagen Final</h2>
+  <img id="resultImg" src="" alt="Resultado">
+  <p id="resultMsg">Toca "Guardar en Galería" para guardar la imagen.</p>
+  <div class="result-actions">
+    <button class="btn-download" id="btnSave" onclick="saveResult()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      Guardar en Galería
+    </button>
+    <button class="btn-close-res" onclick="closeResult()">Cerrar</button>
+  </div>
+</div>
+
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>function updateVehicleTypeIcon() {
+  const holder = document.getElementById('vehicle-type-icon');
+  if (!holder) return;
+
+  const type = detectVehicleType();
+  S.vehicleType = type;
+  holder.innerHTML = vehicleTypeIcon(type);
+}
+
+function vehicleTypeIcon(type) {
+  const icons = {
+    sedan: 'sedan1.png',
+    compacto: 'compact1.png',
+    pickup: 'pickup1.png',
+    suv: 'suv1.png',
+    deportivo: 'sport1.png'
+  };
+
+  const labels = {
+    sedan: 'Sedán',
+    compacto: 'Compacto',
+    pickup: 'Pick-up',
+    suv: 'SUV',
+    deportivo: 'Deportivo'
+  };
+
+  const key = icons[type] ? type : 'compacto';
+
+  return `<img class="vehicle-type-icon"
+              src="${icons[key]}"
+              alt="${labels[key]}"
+              title="${labels[key]}">`;
+}
+
+
+'use strict';
+
+/*
+ * Esta versión NO usa NHTSA, Anthropic ni una API de datos.
+ * La comunicación con StartMyCar usa CapacitorHttp para evitar CORS.
+ */
+
+/* ── DATOS ─────────────────────────────────────────────────── */
+const MAKES = [
+  ['Abarth','abarth'],['Acura','acura'],['Alfa Romeo','alfa-romeo'],
+  ['Aston Martin','aston-martin'],['Audi','audi'],['Austin','austin'],
+  ['Baic','baic'],['BMW','bmw'],['Buick','buick'],['Cadillac','cadillac'],
+  ['Changan','changan'],['Chery','chery'],['Chevrolet','chevrolet'],
+  ['Chrysler','chrysler'],['Citroën','citroen'],['Dacia','dacia'],
+  ['Daewoo','daewoo'],['Daihatsu','daihatsu'],['Dodge','dodge'],
+  ['Dongfeng','dongfeng'],['DS','ds'],['Ferrari','ferrari'],['Fiat','fiat'],
+  ['Ford','ford'],['Geely','geely'],['Genesis','genesis'],['GMC','gmc'],
+  ['Great Wall','great-wall'],['Haval','haval'],['Holden','holden'],
+  ['Honda','honda'],['HSV','hsv'],['Hummer','hummer'],['Hyundai','hyundai'],
+  ['Infiniti','infiniti'],['Isuzu','isuzu'],['JAC','jac'],['Jaguar','jaguar'],
+  ['Jeep','jeep'],['Kia','kia'],['Lancia','lancia'],['Land Rover','land-rover'],
+  ['Lexus','lexus'],['Lincoln','lincoln'],['Mahindra','mahindra'],
+  ['Maserati','maserati'],['Mazda','mazda'],['Mercedes Benz','mercedes-benz'],
+  ['Mercury','mercury'],['MG','mg'],['Mini','mini'],['Mitsubishi','mitsubishi'],
+  ['Nissan','nissan'],['Oldsmobile','oldsmobile'],['Opel','opel'],
+  ['Peugeot','peugeot'],['Pontiac','pontiac'],['Porsche','porsche'],
+  ['Proton','proton'],['RAM','ram'],['Renault','renault'],['Rover','rover'],
+  ['Saab','saab'],['Saturn','saturn'],['Scion','scion'],['Seat','seat'],
+  ['Skoda','skoda'],['Smart','smart'],['SsangYong','ssangyong'],
+  ['Subaru','subaru'],['Suzuki','suzuki'],['Tata','tata'],['Tesla','tesla'],
+  ['Toyota','toyota'],['Triumph','triumph'],['Vauxhall','vauxhall'],
+  ['Volkswagen','volkswagen'],['Volvo','volvo']
+];
+
+const TERMS = {
+  vin: {
+    label:'Etiqueta de Identificación',
+    queries:['vehicle identification number','vehicle identification','vin']
+  },
+  fuel: {
+    label:'Tapa de Gasolina',
+    queries:['fuel filler cap','fuel filler','filler cap','fuel door','gas cap cover']
+  },
+  trailer: {
+    label:'Gancho de Remolque',
+    queries:['trailer hitch','trailer tow','trailer towing','towing']
+  }
+};
+
+const S = {
+  make:'',
+  makeSlug:'',
+  model:'',
+  modelSlug:'',
+  year:'',
+  pdfUrl:'',
+  manualPage:'',
+  pdfDoc:null,
+  pdfBuffer:null,
+  pdfPageCount:0,
+  currentPage:1,
+  scale:1,
+  matches:{vin:null,fuel:null,trailer:null}
+};
+
+let pdfjs = null;
+let pdfLibPromise = null;
+
+
+function loadPdfJs() {
+  if (pdfLibPromise) return pdfLibPromise;
+
+  pdfLibPromise = import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs')
+    .then(mod => {
+      mod.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
+      pdfjs = mod;
+      return mod;
+    });
+
+  return pdfLibPromise;
+}
+
+/* ── INIT ───────────────────────────────────────────────────── */
+(function init() {
+  const sel = document.getElementById('make-sel');
+  MAKES.forEach(([name,slug]) => {
+    const o = document.createElement('option');
+    o.value = slug;
+    o.textContent = name;
+    o.dataset.label = name;
+    sel.appendChild(o);
+  });
+
+  setupPdfViewerControls();
+  setupPdfPan();
+
+  window.addEventListener('resize', () => {
+    centerPdfPageIfNeeded();
+  });
+})();
+
+
+/* ── HTTP NATIVO CON CAPACITOR ───────────────────────────── */
+async function nativeHttpGet(url, options = {}) {
+  const http = window.Capacitor?.Plugins?.CapacitorHttp;
+
+  if (!http || typeof http.get !== 'function') {
+    throw new Error(
+      'CapacitorHttp no está disponible en la aplicación Android.'
+    );
+  }
+
+  return await http.get({
+    url,
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Android) AutoManuales',
+      ...(options.headers || {})
+    },
+    params: options.params,
+    connectTimeout: options.connectTimeout || 15000,
+    readTimeout: options.readTimeout || 30000,
+    responseType: options.responseType || 'text'
+  });
+}
+
+async function nativeHttpText(url, options = {}) {
+  const response = await nativeHttpGet(url, {
+    ...options,
+    responseType: 'text'
+  });
+
+  if (!response || response.status < 200 || response.status >= 300) {
+    throw new Error(
+      `La solicitud falló con HTTP ${response?.status ?? 'desconocido'}.`
+    );
+  }
+
+  return {
+    status: response.status,
+    url: response.url || url,
+    text: String(response.data || '')
+  };
+}
+
+function capacitorHttpDataToArrayBuffer(data) {
+  if (data instanceof ArrayBuffer) return data;
+
+  if (ArrayBuffer.isView(data)) {
+    return data.buffer.slice(
+      data.byteOffset,
+      data.byteOffset + data.byteLength
+    );
+  }
+
+  if (typeof data !== 'string') {
+    throw new Error(
+      'El PDF llegó desde Android, pero no en un formato binario compatible.'
+    );
+  }
+
+  let base64 = data;
+
+  if (base64.startsWith('data:')) {
+    const comma = base64.indexOf(',');
+    if (comma >= 0) base64 = base64.slice(comma + 1);
+  }
+
+  base64 = base64.replace(/\s/g, '');
+
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+
+  return bytes.buffer;
+}
+
+/* ── SELECTORES ─────────────────────────────────────────────── */
+async function onMakeChange() {
+  const sel = document.getElementById('make-sel');
+  const makeSlug = sel.value;
+  const makeName = sel.options[sel.selectedIndex]?.dataset.label || '';
+  const ms = document.getElementById('model-sel');
+  const ys = document.getElementById('year-sel');
+
+  S.make = makeName;
+  S.makeSlug = makeSlug;
+  S.model = S.modelSlug = S.year = '';
+
+  ms.disabled = true;
+  ys.disabled = true;
+  ms.innerHTML = '<option value="">Cargando modelos…</option>';
+  ys.innerHTML = '<option value="">— Elige primero un modelo —</option>';
+  hideErr();
+
+  if (!makeSlug) {
+    ms.innerHTML = '<option value="">— Elige primero un fabricante —</option>';
+    return;
+  }
+
+  try {
+    const r = await nativeHttpGet(`https://www.startmycar.com/${makeSlug}/pickmodel`, { responseType:'text' });
+    if (!r || r.status < 200 || r.status >= 300) {
+      throw new Error(`StartMyCar respondió HTTP ${r?.status ?? 'desconocido'}.`);
+    }
+    const pageHtml = String(r.data || '');
+    const doc = new DOMParser().parseFromString(pageHtml, 'text/html');
+    const models = [];
+    const seen = new Set();
+
+    for (const a of doc.querySelectorAll('a[href]')) {
+      const raw = a.getAttribute('href');
+      if (!raw) continue;
+
+      let u;
+      try { u = new URL(raw, `https://www.startmycar.com/${makeSlug}/pickmodel`); }
+      catch { continue; }
+
+      const match = u.pathname.match(new RegExp(`^/${escapeRegExp(makeSlug)}/([^/]+)$`, 'i'));
+      if (!match) continue;
+
+      const slug = decodeURIComponent(match[1]);
+      const label = cleanText(a.textContent);
+
+      if (!label || slug === 'pickmodel') continue;
+      if (!/^[a-z0-9][a-z0-9-]*$/i.test(slug)) continue;
+      if (seen.has(slug)) continue;
+
+      seen.add(slug);
+      models.push({label, slug});
+    }
+
+    models.sort((a,b)=>a.label.localeCompare(b.label,'es'));
+
+    if (!models.length) {
+      throw new Error(`No se pudieron leer los modelos de ${makeName} desde StartMyCar.`);
+    }
+
+    ms.innerHTML = '<option value="">Selecciona un modelo…</option>';
+    models.forEach(m=>{
+      const o = document.createElement('option');
+      o.value = m.slug;
+      o.textContent = m.label;
+      o.dataset.label = m.label;
+      ms.appendChild(o);
+    });
+    ms.disabled = false;
+  } catch (err) {
+    ms.innerHTML = '<option value="">No se pudieron cargar los modelos</option>';
+    showErr(corsFriendlyError(err,'los modelos'));
+  }
+}
+
+async function onModelChange() {
+  const ms = document.getElementById('model-sel');
+  const ys = document.getElementById('year-sel');
+  const modelSlug = ms.value;
+  const modelName = ms.options[ms.selectedIndex]?.dataset.label || '';
+
+  S.model = modelName;
+  S.modelSlug = modelSlug;
+  S.year = '';
+  ys.disabled = true;
+  ys.innerHTML = '<option value="">Cargando años…</option>';
+  hideErr();
+
+  if (!modelSlug) {
+    ys.innerHTML = '<option value="">— Elige primero un modelo —</option>';
+    return;
+  }
+
+  try {
+    const r = await nativeHttpGet(`https://www.startmycar.com/${S.makeSlug}/${modelSlug}/info/manuals`, { responseType:'text' });
+    if (!r || r.status < 200 || r.status >= 300) {
+      throw new Error(`StartMyCar respondió HTTP ${r?.status ?? 'desconocido'}.`);
+    }
+
+    const pageHtml = String(r.data || '');
+    const doc = new DOMParser().parseFromString(pageHtml, 'text/html');
+    const yearsMap = new Map();
+
+    for (const a of doc.querySelectorAll('a[href]')) {
+      const raw = a.getAttribute('href');
+      if (!raw) continue;
+
+      let u;
+      try { u = new URL(raw, `https://www.startmycar.com/${S.makeSlug}/${modelSlug}/info/manuals`); }
+      catch { continue; }
+
+      const match = u.pathname.match(/\/info\/manuals\/((?:19|20)\d{2})\/?$/i);
+      if (!match) continue;
+
+      yearsMap.set(match[1], {
+        year: match[1],
+        href: u.href
+      });
+    }
+
+    const years = [...yearsMap.values()];
+
+    if (!years.length) {
+      throw new Error('No se encontraron años con manuales para este modelo.');
+    }
+
+    years.sort((a,b)=>Number(b.year)-Number(a.year));
+    ys.innerHTML = '<option value="">Selecciona un año…</option>';
+
+    years.forEach(y=>{
+      const o = document.createElement('option');
+      o.value = y.year;
+      o.textContent = y.year;
+      o.dataset.href = y.href;
+      ys.appendChild(o);
+    });
+
+    ys.disabled = false;
+  } catch (err) {
+    ys.innerHTML = '<option value="">No se pudieron cargar los años</option>';
+    showErr(corsFriendlyError(err,'los años'));
+  }
+}
+
+function onYearChange() {
+  // El botón permanece visible y activo; doSearch() valida los tres campos.
+}
+
+/* ── BÚSQUEDA PRINCIPAL ─────────────────────────────────────── */
+async function doSearch() {
+  const makeSel = document.getElementById('make-sel');
+  const ms = document.getElementById('model-sel');
+  const ys = document.getElementById('year-sel');
+
+  S.make = makeSel.options[makeSel.selectedIndex].dataset.label;
+  S.makeSlug = makeSel.value;
+  S.model = ms.options[ms.selectedIndex].dataset.label;
+  S.modelSlug = ms.value;
+  S.year = ys.value;
+
+  if (!S.makeSlug || !S.modelSlug || !S.year) {
+    showToast('Agrega todos los datos');
+    return;
+  }
+
+  S.pdfUrl = '';
+  S.manualPage = '';
+  S.pdfDoc = null;
+  S.pdfBuffer = null;
+  S.matches = {vin:null,fuel:null,trailer:null};
+
+  resetResultUI();
+  showScr('load');
+  setStep(1);
+
+  try {
+    const manualUrl =
+      ys.options[ys.selectedIndex]?.dataset.href ||
+      `https://www.startmycar.com/${S.makeSlug}/${S.modelSlug}/info/manuals/${S.year}`;
+
+    setStep(2);
+    const r = await nativeHttpGet(manualUrl, { responseType:'text' });
+    if (!r || r.status < 200 || r.status >= 300) {
+      throw new Error(`StartMyCar respondió HTTP ${r?.status ?? 'desconocido'}.`);
+    }
+
+    const pageHtml = String(r.data || '');
+    const doc = new DOMParser().parseFromString(pageHtml, 'text/html');
+    S.manualPage = manualUrl;
+
+    let pdf = '';
+    let bestScore = -1;
+
+    for (const el of doc.querySelectorAll('a[href], iframe[src], embed[src], object[data]')) {
+      const raw =
+        el.getAttribute('href') ||
+        el.getAttribute('src') ||
+        el.getAttribute('data') ||
+        '';
+
+      if (!raw) continue;
+
+      let u;
+      try { u = new URL(raw, manualUrl); } catch { continue; }
+
+      const label = cleanText(el.textContent || '');
+      const score =
+        (/download manual pdf/i.test(label) ? 100 : 0) +
+        (/\.pdf(?:$|[?#])/i.test(u.href) ? 60 : 0) +
+        (/manuals\.startmycar\.com/i.test(u.hostname) ? 20 : 0);
+
+      if (score > bestScore) {
+        bestScore = score;
+        pdf = u.href;
+      }
+    }
+    if (!pdf) {
+      throw new Error(
+        'Se encontró la página del manual, pero no se pudo localizar su enlace directo al PDF.'
+      );
+    }
+
+    S.pdfUrl = pdf;
+    setStep(3);
+
+    await loadAndSearchPdf(pdf);
+
+    setStep(4);
+    await sleep(300);
+    buildResults();
+    showScr('res');
+  } catch (err) {
+    showScr('sel');
+    showErr(corsFriendlyError(err,'el manual'));
+  }
+}
+
+/* ── PDF ────────────────────────────────────────────────────── */
+async function loadAndSearchPdf(pdfUrl) {
+  setPdfLoading('Preparando el visor PDF…');
+  S.pdfPageCount = 0;
+  S.currentPage = 1;
+  S.scale = 1;
+  S.matches = {
+    vin:{pages:[],index:0},
+    fuel:{pages:[],index:0},
+    trailer:{pages:[],index:0}
+  };
+
+  /*
+   * El PDF se descarga UNA sola vez mediante CapacitorHttp.
+   * El mismo documento PDF.js se utiliza tanto para analizar el texto
+   * como para mostrar las páginas. No hay iframe, mensajería entre ventanas ni segundo HTML para el visor.
+   */
+  await loadPdfJs();
+
+  const resp = await nativeHttpGet(pdfUrl, {
+    responseType:'arraybuffer',
+    headers:{'Accept':'application/pdf'}
+  });
+
+  if (!resp || resp.status < 200 || resp.status >= 300) {
+    throw new Error(
+      `No se pudo leer el PDF (HTTP ${resp?.status ?? 'desconocido'}).`
+    );
+  }
+
+  const buf = capacitorHttpDataToArrayBuffer(resp.data);
+
+  if (!buf || buf.byteLength < 5) {
+    throw new Error(
+      'StartMyCar respondió HTTP 200, pero no devolvió datos válidos del PDF.'
+    );
+  }
+
+  const signature = new TextDecoder().decode(buf.slice(0,5));
+  if (signature !== '%PDF-') {
+    throw new Error(
+      'La respuesta HTTP 200 no corresponde a un PDF válido.'
+    );
+  }
+
+  setPdfLoading('Analizando el PDF…');
+
+  /*
+   * IMPORTANTE:
+   * PDF.js puede transferir/detachar el ArrayBuffer que recibe.
+   * Si usamos el mismo buffer para imprimir después, aparece:
+   * "Cannot perform Construct on a detached ArrayBuffer".
+   *
+   * Por eso conservamos una copia exclusiva para la impresión
+   * y entregamos el buffer original a PDF.js.
+   */
+  S.pdfBuffer = buf.slice(0);
+
+  /* PDF.js recibe su propio ArrayBuffer y puede transferirlo sin afectar
+     el que conservamos para la impresión nativa. */
+  S.pdfDoc = await pdfjs.getDocument({data:buf}).promise;
+  S.pdfPageCount = S.pdfDoc.numPages;
+
+  for (let p=1; p<=S.pdfPageCount; p++) {
+    if(p===1 || p%10===0) {
+      setPdfLoading(`Buscando coincidencias… página ${p} de ${S.pdfPageCount}`);
+    }
+
+    const page=await S.pdfDoc.getPage(p);
+    const content=await page.getTextContent();
+    const text=normalizeText(content.items.map(item=>item.str||'').join(' '));
+
+    for(const key of Object.keys(TERMS)) {
+      const query=findQuery(text,TERMS[key].queries);
+      if(query) S.matches[key].pages.push({page:p,query});
+    }
+  }
+
+  setPdfLoading('Preparando la primera página…');
+
+  document.getElementById('pdf-page-total').textContent = String(S.pdfPageCount);
+  document.getElementById('pdf-page-input').max = String(S.pdfPageCount);
+
+  /* 100% real por defecto; la página queda centrada horizontalmente. */
+  S.scale = 1;
+  await renderPdfPage(1);
+  updatePdfToolbar();
+  hidePdfLoading();
+}
+
+function findQuery(text,queries) {
+  for(const q of queries) {
+    const nq=normalizeText(q);
+    if(nq==='vin') {
+      if(/(^|\s)vin($|\s|[.,:;()\-\/])/i.test(text)) return q;
+    } else if(text.includes(nq)) return q;
+  }
+  return null;
+}
+
+async function renderPdfPage(pageNumber, options = {}) {
+  if (!S.pdfDoc) return;
+
+  let page = Math.max(1, Math.min(Number(pageNumber) || 1, S.pdfPageCount));
+
+  const pdfPage = await S.pdfDoc.getPage(page);
+  const viewportBase = pdfPage.getViewport({scale:1});
+
+  const area = document.getElementById('pdf-page-area');
+  const availableWidth = Math.max(
+    280,
+    area.clientWidth - 24
+  );
+
+  if (options.fitWidth) {
+    S.scale = availableWidth / viewportBase.width;
+  } else if (!Number.isFinite(S.scale) || S.scale <= 0) {
+    S.scale = Math.min(1, availableWidth / viewportBase.width);
+  }
+
+  /* Evita que una página enorme desborde horizontalmente la pantalla. */
+  S.scale = Math.max(.35, Math.min(8, S.scale));
+
+  const viewport = pdfPage.getViewport({scale:S.scale});
+  const canvas = document.getElementById('pdf-canvas');
+  const ctx = canvas.getContext('2d', {alpha:false});
+
+  const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
+
+  canvas.width = Math.ceil(viewport.width * pixelRatio);
+  canvas.height = Math.ceil(viewport.height * pixelRatio);
+  canvas.style.width = `${Math.ceil(viewport.width)}px`;
+  canvas.style.height = `${Math.ceil(viewport.height)}px`;
+
+  ctx.setTransform(pixelRatio,0,0,pixelRatio,0,0);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0,0,viewport.width,viewport.height);
+
+  await pdfPage.render({
+    canvasContext:ctx,
+    viewport
+  }).promise;
+
+  S.currentPage = page;
+
+  centerPdfPageIfNeeded();
+
+  const input = document.getElementById('pdf-page-input');
+  if (input) input.value = String(page);
+
+  updatePdfToolbar();
+}
+
+function centerPdfPageIfNeeded() {
+  const area = document.getElementById('pdf-page-area');
+  const canvas = document.getElementById('pdf-canvas');
+  if (!area || !canvas) return;
+
+  const horizontalFree = area.clientWidth - canvas.offsetWidth;
+  if (horizontalFree > 0) {
+    canvas.style.marginLeft = `${Math.max(0, Math.floor(horizontalFree / 2))}px`;
+    canvas.style.marginRight = `${Math.max(0, Math.floor(horizontalFree / 2))}px`;
+  } else {
+    canvas.style.marginLeft = '0';
+    canvas.style.marginRight = '0';
+  }
+}
+
+function updatePdfToolbar() {
+  const page = S.currentPage;
+  const total = S.pdfPageCount;
+
+  const input = document.getElementById('pdf-page-input');
+  const totalEl = document.getElementById('pdf-page-total');
+  const prev = document.getElementById('pdf-prev');
+  const next = document.getElementById('pdf-next');
+
+  if (input) {
+    input.value = String(page || 1);
+    input.max = String(total || 1);
+  }
+  if (totalEl) totalEl.textContent = String(total || '—');
+
+  const hasPdf = !!S.pdfDoc && total > 0;
+
+  if (prev)  prev.disabled  = !hasPdf || page <= 1;
+  if (next)  next.disabled  = !hasPdf || page >= total;
+}
+
+function setupPdfPan() {
+  const area = document.getElementById('pdf-page-area');
+  if (!area) return;
+
+  let active = false;
+  let startX = 0;
+  let startY = 0;
+  let startScrollLeft = 0;
+  let startScrollTop = 0;
+
+  area.addEventListener('pointerdown', event => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+
+    const canPanX = area.scrollWidth > area.clientWidth + 1;
+    const canPanY = area.scrollHeight > area.clientHeight + 1;
+    if (!canPanX && !canPanY) return;
+
+    active = true;
+    startX = event.clientX;
+    startY = event.clientY;
+    startScrollLeft = area.scrollLeft;
+    startScrollTop = area.scrollTop;
+    area.classList.add('dragging');
+
+    try { area.setPointerCapture(event.pointerId); } catch {}
+  });
+
+  area.addEventListener('pointermove', event => {
+    if (!active) return;
+
+    event.preventDefault();
+
+    const dx = event.clientX - startX;
+    const dy = event.clientY - startY;
+
+    area.scrollLeft = startScrollLeft - dx;
+    area.scrollTop = startScrollTop - dy;
+  });
+
+  const stop = event => {
+    if (!active) return;
+    active = false;
+    area.classList.remove('dragging');
+
+    try { area.releasePointerCapture(event.pointerId); } catch {}
+  };
+
+  area.addEventListener('pointerup', stop);
+  area.addEventListener('pointercancel', stop);
+  area.addEventListener('pointerleave', event => {
+    if (event.pointerType === 'mouse') stop(event);
+  });
+}
+
+
+let nativeDevicePluginPromise = null;
+
+async function getNativeDevicePlugin() {
+  console.log('CAMARA: buscando plugin nativo');
+
+  const cap = window.Capacitor;
+
+  if (!cap) {
+    throw new Error('Capacitor no está disponible en el WebView.');
+  }
+
+  /*
+   * Esta app ya demuestra que CapacitorHttp funciona mediante
+   * window.Capacitor.Plugins. Por eso el plugin personalizado debe
+   * obtenerse del mismo puente, no mediante otra copia de @capacitor/core.
+   */
+  const plugins = cap.Plugins;
+
+  if (plugins && plugins.AutoManualesDevice) {
+    console.log('CAMARA: AutoManualesDevice encontrado en Capacitor.Plugins');
+    window.AutoManualesDevice = plugins.AutoManualesDevice;
+    return plugins.AutoManualesDevice;
+  }
+
+  if (window.AutoManualesDevice) {
+    console.log('CAMARA: AutoManualesDevice encontrado en window');
+    return window.AutoManualesDevice;
+  }
+
+  throw new Error(
+    'AutoManualesDevice no está registrado en Capacitor.Plugins.'
+  );
+}
+
+function arrayBufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000;
+  let binary = '';
+
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, Math.min(i + chunkSize, bytes.length));
+    binary += String.fromCharCode(...chunk);
+  }
+
+  return btoa(binary);
+}
+
+async function printCurrentPdf() {
+  if (!S.pdfBuffer || !S.pdfPageCount) {
+    alert('El PDF todavía no está listo para imprimir.');
+    return;
+  }
+
+  const device = await getNativeDevicePlugin();
+
+  if (!device || typeof device.printPdf !== 'function') {
+    alert(
+      'La impresión nativa todavía no está disponible en esta instalación de AutoManuales.'
+    );
+    return;
+  }
+
+  const button = document.getElementById('pdf-print');
+  if (button) button.disabled = true;
+
+  try {
+    setPdfLoading('Preparando impresión…');
+
+    /*
+     * Otra copia defensiva: la conversión nunca trabaja sobre un buffer
+     * que pueda ser reutilizado por PDF.js.
+     */
+    const printableBuffer = S.pdfBuffer.slice(0);
+    const pdfBase64 = arrayBufferToBase64(printableBuffer);
+    const jobName = `Manual ${S.year} ${S.make} ${S.model}`;
+
+    await device.printPdf({
+      pdfBase64,
+      jobName,
+      pageCount: S.pdfPageCount
+    });
+
+    hidePdfLoading();
+  } catch (error) {
+    console.error('Error al imprimir:', error);
+    hidePdfLoading();
+
+    alert(
+      'No se pudo abrir la impresión.\\n\\n' +
+      (error?.message || String(error) || 'Error desconocido')
+    );
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+/* =====================================================
+   CÁMARA — SCREEN 3
+   Abre la cámara nativa. Cuando el usuario confirma la
+   foto, Java la guarda en galería y devuelve un thumbnail
+   base64. Ese thumbnail se muestra en el mismo resultOverlay
+   de SCREEN 4 para mantener la misma lógica y estética.
+===================================================== */
+async function takePhoto() {
+  const button = document.getElementById('take-photo-btn');
+  if (button) button.disabled = true;
+
+  try {
+    const device = window.Capacitor?.Plugins?.AutoManualesDevice;
+
+    if (!device || typeof device.takePhoto !== 'function') {
+      throw new Error('La cámara no está disponible.');
+    }
+
+    const ts      = new Date().toISOString().replace(/[:.]/g, '-').replace('T', '_').replace('Z', '');
+    const vehicle = [S.year, S.make, S.model]
+      .map(v => String(v || '').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9_-]+/g,'_').replace(/^_+|_+$/g,'').slice(0, 40))
+      .filter(Boolean).join('_');
+    const fileName = (vehicle || 'AutoManuales') + '_' + ts + '.jpg';
+
+    const result = await device.takePhoto({ fileName });
+
+    // Java devuelve imageBase64 (thumbnail ≤800px) y ya guardó la foto completa
+    const thumbnail = result?.imageBase64;
+    if (!thumbnail || !thumbnail.startsWith('data:')) {
+      throw new Error('No se pudo obtener la vista previa de la foto.');
+    }
+
+    // Reutilizar el mismo overlay y lógica de SCREEN 4
+    state.resultDataUrl  = thumbnail;
+    state.resultIsCamera = true;
+    state.cameraFolder   = result?.folder || 'Pictures/AutoManuales';
+
+    document.getElementById('resultImg').src    = thumbnail;
+    document.getElementById('resultMsg').textContent =
+      'Foto guardada. Toca "Guardar en Galería" para confirmar.';
+    document.getElementById('resultOverlay').classList.add('visible');
+
+  } catch (error) {
+    if (!/cancel/i.test(error?.message || '')) {
+      showToast('No se pudo tomar la foto');
+    }
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+function setupPdfViewerControls() {
+  const prev = document.getElementById('pdf-prev');
+  const next = document.getElementById('pdf-next');
+  const input = document.getElementById('pdf-page-input');
+  const zoomOut = document.getElementById('pdf-zoom-out');
+  const zoomIn = document.getElementById('pdf-zoom-in');
+  const print = document.getElementById('pdf-print');
+  const camera = document.getElementById('take-photo-btn');
+  prev?.addEventListener('click', () => renderPdfPage(S.currentPage - 1));
+  next?.addEventListener('click', () => renderPdfPage(S.currentPage + 1));
+
+  input?.addEventListener('change', () => {
+    renderPdfPage(input.value).catch(err => {
+      console.error('Error al cambiar de página:', err);
+      input.value = String(S.currentPage);
+    });
+  });
+
+  input?.addEventListener('keydown', event => {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      renderPdfPage(input.value).catch(err => {
+        console.error('Error al cambiar de página:', err);
+        input.value = String(S.currentPage);
+      });
+      input.blur();
+    }
+  });
+
+  zoomOut?.addEventListener('click', () => {
+    if (!S.pdfDoc) return;
+    S.scale = Math.max(.35, S.scale / 1.2);
+    renderPdfPage(S.currentPage).catch(console.error);
+  });
+
+  zoomIn?.addEventListener('click', () => {
+    if (!S.pdfDoc) return;
+    S.scale = Math.min(8, S.scale * 1.2);
+    renderPdfPage(S.currentPage).catch(console.error);
+  });
+}
+
+async function navigateMatch(key,dir) {
+  const match=S.matches[key];
+  if(!match || !match.pages.length) return;
+
+  let idx=match.index+dir;
+  if(idx<0) idx=match.pages.length-1;
+  if(idx>=match.pages.length) idx=0;
+  match.index=idx;
+
+  const hit=match.pages[idx];
+  S.currentPage=hit.page;
+  setActiveQuery(key);
+
+  /*
+   * El PDF ya está cargado en S.pdfDoc.
+   * Solo renderizamos la página correspondiente; no se descarga
+   * nuevamente y no se crea ningún segundo visor.
+   */
+  try {
+    setPdfLoading(`Abriendo página ${hit.page}…`);
+    await renderPdfPage(hit.page);
+    hidePdfLoading();
+  } catch (err) {
+    console.error('Error al mostrar coincidencia:', err);
+    hidePdfLoading();
+  }
+
+  document.getElementById('viewer-note').textContent =
+    `🔎 ${TERMS[key].label}: Coincidencia ${idx+1} de ${match.pages.length} · página ${hit.page} · “${hit.query}”.`;
+
+  updateQueryControls();
+}
+
+function handleYouTubeSearch() {
+  if (!S.pdfDoc || !S.pdfPageCount || !S.pdfUrl) {
+    showToast('Agrega la información');
+    return;
+  }
+  searchFuelCapOnYouTube();
+}
+
+/* =====================================================
+   MODELS118 — Imagen dinámica del vehículo
+   Busca en models118.com/{makeSlug}/ la foto más parecida
+   al vehículo seleccionado y la muestra en la tarjeta.
+   Usa StartMyCarPlugin.getPage() para evitar CORS.
+   El icono estático se muestra de inmediato como fallback.
+===================================================== */
+
+// Excepciones: slugs de la app que no coinciden con models118.com
+const MODELS118_SLUG_MAP = {
+  'mercedes-benz': 'mercedes',
+  'land-rover':    'land-rover',
+  'alfa-romeo':    'alfa-romeo',
+  'aston-martin':  'aston-martin',
+};
+
+function getModels118BrandUrl(makeSlug) {
+  const slug = MODELS118_SLUG_MAP[makeSlug] || makeSlug;
+  return `https://models118.com/${slug}/`;
+}
+
+// Parsea los productos de una página HTML de models118.com
+// Devuelve [{name, imgUrl}]
+function parseModels118Products(html) {
+  try {
+    const parser = new DOMParser();
+    const doc    = parser.parseFromString(html, 'text/html');
+    const results = [];
+
+    // WooCommerce: imágenes con class que contiene "product_card"
+    const imgs = doc.querySelectorAll(
+      'img.attachment-product_card, img[class*="product_card"], img[class*="size-product_card"]'
+    );
+
+    imgs.forEach(img => {
+      const rawSrc = img.getAttribute('src') || '';
+      // Usar siempre la miniatura 300x200
+      const imgUrl = rawSrc.replace(/-\d+x\d+(\.\w+)$/, '-300x200$1') || rawSrc;
+      // El alt/title tiene el nombre completo del producto
+      const raw  = (img.getAttribute('alt') || img.getAttribute('title') || '').trim();
+      // Quitar "Diecast" / "Resin" del final
+      const name = raw.replace(/\s+(Diecast|Resin|Composite)\s*$/i, '').trim();
+
+      if (name && imgUrl && imgUrl.startsWith('http')) {
+        results.push({ name, imgUrl });
+      }
+    });
+
+    return results;
+  } catch (e) {
+    return [];
+  }
+}
+
+// Puntuación de similitud: cuántas palabras del modelo aparecen en el nombre del producto
+function scoreMatch(productName, model, year) {
+  const normalize = s => String(s || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ').trim();
+
+  const pNorm      = normalize(productName);
+  const modelWords = normalize(model).split(' ').filter(w => w.length > 1);
+  const yearStr    = String(year || '');
+  let score = 0;
+
+  modelWords.forEach(w => { if (pNorm.includes(w)) score++; });
+  if (yearStr && pNorm.includes(yearStr)) score += 0.5;
+
+  return score;
+}
+
+async function fetchVehicleImageFromModels118() {
+  if (!S.makeSlug || !S.model) return;
+
+  const holder = document.getElementById('vehicle-type-icon');
+  if (!holder) return;
+
+  // Solo disponible en Capacitor (usa StartMyCar para evitar CORS)
+  const plugin = window.Capacitor?.Plugins?.StartMyCar;
+  if (!plugin || typeof plugin.getPage !== 'function') return;
+
+  const baseUrl = getModels118BrandUrl(S.makeSlug);
+
+  try {
+    let best = null;
+
+    // Buscar en hasta 3 páginas de resultados de la marca
+    for (let page = 1; page <= 3; page++) {
+      const url      = page === 1 ? baseUrl : `${baseUrl}page/${page}/`;
+      let response;
+      try {
+        response = await plugin.getPage({ url });
+      } catch (_) { break; }
+
+      if (!response?.body) break;
+
+      const products = parseModels118Products(response.body);
+      if (products.length === 0) break;
+
+      products.forEach(p => {
+        const s = scoreMatch(p.name, S.model, S.year);
+        if (s > 0 && (!best || s > best.score)) {
+          best = { ...p, score: s };
+        }
+      });
+
+      // Score >= 2 palabras coincidentes: suficientemente bueno, parar
+      if (best && best.score >= 2) break;
+    }
+
+    if (best?.imgUrl) {
+      holder.innerHTML = `<img class="vehicle-type-icon"
+        src="${best.imgUrl}"
+        alt="${best.name}"
+        title="${best.name}"
+        onerror="this.onerror=null; this.parentElement.innerHTML=fallbackVehicleIconHtml();">`;
+    }
+
+  } catch (err) {
+    // Fallo silencioso — el icono estático ya está visible
+    console.log('Models118 fallback:', err.message);
+  }
+}
+
+// Genera el HTML del icono estático de fallback
+function fallbackVehicleIconHtml() {
+  const type = S.vehicleType || detectVehicleType();
+  return vehicleTypeIcon(type || 'compacto');
+}
+
+function searchFuelCapOnYouTube() {
+  const vehicle = [
+    S.year,
+    S.make,
+    S.model
+  ].filter(Boolean).join(' ').trim();
+
+  if (!vehicle) {
+    alert('Primero selecciona un vehículo.');
+    return;
+  }
+
+  const query = `${vehicle} fuel filler cap removal`;
+  const youtubeUrl =
+    `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+
+  window.open(youtubeUrl, '_blank', 'noopener');
+}
+
+/* ── RESULTADOS ─────────────────────────────────────────────── */
+function setActiveQuery(key) {
+  document.querySelectorAll('.query-btn').forEach(el=>el.classList.remove('active'));
+  document.querySelector(`.query-btn[data-key="${key}"]`)?.classList.add('active');
+}
+
+function updateQueryControls() {
+  for (const key of Object.keys(TERMS)) {
+    const box = document.querySelector(`.query-btn[data-key="${key}"]`);
+    const count = document.getElementById(`hit-${key}`);
+    const prev = box.querySelector('[data-dir="prev"]');
+    const next = box.querySelector('[data-dir="next"]');
+    const hit = S.matches[key];
+    const total = hit?.pages?.length || 0;
+
+    box.classList.toggle('empty', total===0);
+    prev.disabled = total===0;
+    next.disabled = total===0;
+
+    count.textContent = total
+      ? `${hit.index+1} / ${total}`
+      : 'Sin coincidencias';
+  }
+}
+
+function detectVehicleType() {
+  /*
+   * CLASIFICACIÓN SIMPLE POR FABRICANTE
+   *
+   * No intenta identificar el tipo por cada modelo.
+   * Cada fabricante tiene una categoría predominante/preferida.
+   * Luego esa categoría se traduce al PNG correspondiente.
+   *
+   * Si un fabricante no aparece en la tabla, usamos "compacto"
+   * como categoría genérica.
+   */
+  const make = String(S.make || '').trim().toLowerCase();
+
+  const manufacturerType = {
+    // Sedán
+    bmw: 'sedan',
+    mercedes: 'sedan',
+    audi: 'sedan',
+    lexus: 'sedan',
+    acura: 'sedan',
+    infiniti: 'sedan',
+    cadillac: 'sedan',
+    lincoln: 'sedan',
+    volvo: 'sedan',
+    genesis: 'sedan',
+    jaguar: 'sedan',
+    alfa: 'sedan',
+    'alfa romeo': 'sedan',
+    maserati: 'sedan',
+
+    // SUV
+    hyundai: 'suv',
+    kia: 'suv',
+    subaru: 'suv',
+    jeep: 'suv',
+    landrover: 'suv',
+    'land rover': 'suv',
+    'range rover': 'suv',
+    mazda: 'suv',
+    mitsubishi: 'suv',
+    'mercedes-benz': 'sedan',
+
+    // Pick-up
+    ford: 'pickup',
+    chevrolet: 'pickup',
+    gmc: 'pickup',
+    ram: 'pickup',
+    dodge: 'pickup',
+    toyota: 'pickup',
+    nissan: 'pickup',
+    honda: 'pickup',
+
+    // Deportivo
+    porsche: 'deportivo',
+    ferrari: 'deportivo',
+    lamborghini: 'deportivo',
+    mclaren: 'deportivo',
+    lotus: 'deportivo',
+    aston: 'deportivo',
+    'aston martin': 'deportivo',
+
+    // Compacto
+    volkswagen: 'compacto',
+  };
+
+  return manufacturerType[make] || 'compacto';
+}
+
+function updateVehicleTypeIcon() {
+  const holder = document.getElementById('vehicle-type-icon');
+  if (!holder) return;
+
+  const type = detectVehicleType();
+  S.vehicleType = type;
+
+  // Mostrar "buscando" mientras fetchVehicleImageFromModels118 trabaja en segundo plano
+  holder.innerHTML = '<img class="vehicle-type-icon" src="searching.png" alt="Buscando imagen…">';
+}
+
+function buildResults() {
+  document.getElementById('veh-name').textContent = `${S.year} ${S.make} ${S.model}`;
+  updateVehicleTypeIcon();
+  fetchVehicleImageFromModels118(); // buscar imagen en models118.com en segundo plano
+  document.getElementById('viewer-meta').textContent =
+    `${S.pdfPageCount} páginas · PDF localizado en StartMyCar`;
+
+  document.getElementById('open-startmycar').onclick = () => {
+    window.open(S.manualPage,'_blank','noopener');
+  };
+
+  updateQueryControls();
+  hidePdfLoading();
+}
+
+function resetResultUI() {
+  document.querySelectorAll('.query-btn').forEach(btn=>{
+    btn.classList.remove('active');
+    btn.classList.add('empty');
+    btn.querySelector('[data-dir="prev"]').disabled = true;
+    btn.querySelector('[data-dir="next"]').disabled = true;
+  });
+
+  ['hit-vin','hit-fuel','hit-trailer'].forEach(id=>{
+    document.getElementById(id).textContent = '—';
+  });
+
+  /* Reinicia únicamente cuando comienza una nueva búsqueda. */
+  const canvas = document.getElementById('pdf-canvas');
+  const ctx = canvas?.getContext('2d');
+  if (ctx && canvas) {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+  }
+
+  const input = document.getElementById('pdf-page-input');
+  const total = document.getElementById('pdf-page-total');
+  if (input) input.value = '1';
+  if (total) total.textContent = '—';
+}
+
+/* ── UI HELPERS ─────────────────────────────────────────────── */
+function showScr(name) {
+  ['sel','load','res','edit'].forEach(s=>{
+    const el = document.getElementById(`scr-${s}`);
+    if (el) el.classList.toggle('on',s===name);
+  });
+}
+
+function setStep(n) {
+  for (let i=1;i<=4;i++) {
+    const el = document.getElementById(`ps${i}`);
+    const dot = el.querySelector('.pdot');
+    el.className = 'pstep' + (i<n?' done':i===n?' active':'');
+    dot.textContent = i<n?'✓':i===n?'●':String(i);
+  }
+}
+
+function setPdfLoading(msg) {
+  document.getElementById('pdf-loading').classList.remove('hidden');
+  document.getElementById('pdf-loading-text').textContent = msg;
+}
+function hidePdfLoading() {
+  document.getElementById('pdf-loading').classList.add('hidden');
+}
+function showErr(msg) {
+  const b = document.getElementById('sel-err');
+  b.textContent = `⚠️  ${msg}`;
+  b.style.display = 'block';
+}
+function hideErr() {
+  document.getElementById('sel-err').style.display = 'none';
+}
+function goBack() {
+  showScr('sel');
+  hideErr();
+  window.scrollTo(0,0);
+}
+function goToFoto() {
+  showScr('edit');
+  window.scrollTo(0,0);
+}
+
+function goToResultados() {
+  showScr('res');
+  window.scrollTo(0,0);
+}
+function sleep(ms) { return new Promise(r=>setTimeout(r,ms)); }
+function cleanText(s) { return String(s||'').replace(/\s+/g,' ').trim(); }
+function normalizeText(s) {
+  return cleanText(s).toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+function escapeRegExp(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+}
+function corsFriendlyError(err,what) {
+  const msg = String(err?.message||err||'');
+  if (/failed to fetch|networkerror|cors|access-control/i.test(msg)) {
+    return `No fue posible obtener ${what} desde StartMyCar. Revisa la conexión a Internet e inténtalo nuevamente.`;
+  }
+  return msg || `No fue posible consultar ${what}.`;
+}
+
+
+/* ═══════════ EDITOR INTEGRADO · JAVASCRIPT ═══════════ */
+
+/* =====================================================
+   STATE
+===================================================== */
+const state = {
+  img1: null,
+  img2: null,
+  img1Base: null,
+  img2Base: null,
+  textOverlay: null,
+  textHistory: [],
+  drawColor: '#e63946',
+  brushSize: 5,
+  drawing: false,
+  drawMode: false,
+  lastX: 0, lastY: 0,
+  strokes: [],
+  currentStroke: [],
+  resultDataUrl: null,
+  resultIsCamera: false,
+  cameraFolder: null,
+};
+
+/* =====================================================
+   UPLOAD
+===================================================== */
+function triggerUpload(n) {
+  if (state.drawMode && n === 2) return;
+  document.getElementById('input' + n).click();
+}
+
+document.getElementById('input1').addEventListener('change', e => loadImage(e, 1));
+document.getElementById('input2').addEventListener('change', e => loadImage(e, 2));
+
+function loadImage(e, n) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.getElementById('canvas' + n);
+    const box    = document.getElementById('box' + n);
+    const w = box.offsetWidth;
+    const h = Math.round(w * 16 / 9);
+    canvas.width  = w;
+    canvas.height = h;
+    const ctx = canvas.getContext('2d');
+    drawImageCover(ctx, img, w, h);
+    canvas.classList.add('active');
+    document.getElementById('placeholder' + n).style.display = 'none';
+    document.getElementById('box' + n).classList.add('has-image');
+
+    if (n === 1) {
+      state.img1     = img;
+      state.img1Base = ctx.getImageData(0, 0, w, h);
+      state.textOverlay = null;
+      state.textHistory = [];
+      document.getElementById('btnText1').disabled = false;
+      document.getElementById('btnUndoText').style.display = 'none';
+      document.getElementById('box1').onclick = () => {
+        if (!state.drawMode) document.getElementById('input1').click();
+      };
+    } else {
+      state.img2     = img;
+      state.img2Base = ctx.getImageData(0, 0, w, h);
+      state.strokes  = [];
+      document.getElementById('btnDraw').disabled = false;
+      document.getElementById('box2').onclick = () => {
+        if (!state.drawMode) document.getElementById('input2').click();
+      };
+      attachDrawListeners();
+    }
+    URL.revokeObjectURL(url);
+    showToast('Imagen ' + n + ' cargada ✓');
+  };
+  img.src = url;
+  e.target.value = '';
+}
+
+function drawImageCover(ctx, img, w, h) {
+  const scale = Math.max(w / img.width, h / img.height);
+  const sw = img.width  * scale;
+  const sh = img.height * scale;
+  ctx.clearRect(0, 0, w, h);
+  ctx.drawImage(img, (w - sw) / 2, (h - sh) / 2, sw, sh);
+}
+
+/* =====================================================
+   TEXT OVERLAY (canvas1)
+===================================================== */
+function openTextModal() {
+  if (!state.img1) return;
+  document.getElementById('textModal').classList.add('visible');
+  setTimeout(() => document.getElementById('textInput').focus(), 100);
+}
+
+function closeTextModal() {
+  document.getElementById('textModal').classList.remove('visible');
+}
+
+function applyText() {
+  const text = document.getElementById('textInput').value.trim();
+  if (!text) { closeTextModal(); return; }
+  const fontSize = parseInt(document.getElementById('fontSize').value) || 22;
+  const canvas = document.getElementById('canvas1');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+
+  if (state.img1Base) ctx.putImageData(state.img1Base, 0, 0);
+
+  ctx.font = `bold ${fontSize}px 'Inter',sans-serif`;
+  const maxW   = w - 24;
+  const words  = text.split(' ');
+  const lines  = [];
+  let line = '';
+  for (const word of words) {
+    const test = line ? line + ' ' + word : word;
+    if (ctx.measureText(test).width > maxW && line) { lines.push(line); line = word; }
+    else line = test;
+  }
+  if (line) lines.push(line);
+
+  const lineH  = fontSize + 6;
+  const pad    = 12;
+  const blockH = lines.length * lineH + pad * 2;
+
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, h - blockH, w, blockH);
+  ctx.fillStyle = '#000000';
+  ctx.textBaseline = 'top';
+  lines.forEach((l, i) => {
+    ctx.fillText(l, (w - ctx.measureText(l).width) / 2, h - blockH + pad + i * lineH);
+  });
+
+  state.textOverlay = { text, fontSize };
+  state.textHistory.push({ text, fontSize });
+  document.getElementById('btnUndoText').style.display = 'block';
+  closeTextModal();
+  showToast('Texto aplicado ✓');
+}
+
+function undoText() {
+  if (!state.textOverlay || !state.img1Base) {
+    showToast('No hay texto para deshacer');
+    return;
+  }
+
+  const canvas = document.getElementById('canvas1');
+  const ctx = canvas.getContext('2d');
+  ctx.putImageData(state.img1Base, 0, 0);
+  state.textOverlay = null;
+  state.textHistory = [];
+  document.getElementById('btnUndoText').style.display = 'none';
+  showToast('Texto deshecho');
+}
+
+/* =====================================================
+   DRAWING (canvas2)
+===================================================== */
+function toggleDraw() {
+  if (!state.img2) return;
+  state.drawMode = !state.drawMode;
+  const btn     = document.getElementById('btnDraw');
+  const toolbar = document.getElementById('drawToolbar');
+  if (state.drawMode) {
+    btn.classList.remove('btn-secondary');
+    btn.classList.add('btn-draw-active');
+    btn.textContent = '🛑 Detener dibujo';
+    toolbar.classList.add('visible');
+    document.getElementById('box2').onclick = null;
+    showToast('Modo dibujo activo');
+  } else {
+    btn.classList.add('btn-secondary');
+    btn.classList.remove('btn-draw-active');
+    btn.textContent = '✍🏻 Dibujar';
+    toolbar.classList.remove('visible');
+    document.getElementById('box2').onclick = () => {
+      if (!state.drawMode) document.getElementById('input2').click();
+    };
+  }
+}
+
+function setColor(name) {
+  state.drawColor = name === 'red' ? '#e63946' : '#ffffff';
+  document.getElementById('swatchRed').classList.toggle('selected',   name === 'red');
+  document.getElementById('swatchWhite').classList.toggle('selected', name === 'white');
+}
+
+function updateBrushPreview() {
+  const v = document.getElementById('brushSize').value;
+  state.brushSize = parseInt(v);
+  const el = document.getElementById('brushPreview');
+  el.style.width  = v + 'px';
+  el.style.height = v + 'px';
+}
+
+function attachDrawListeners() {
+  const canvas = document.getElementById('canvas2');
+  // Evitar duplicar listeners si se recarga imagen
+  canvas.removeEventListener('mousedown',  startDraw);
+  canvas.removeEventListener('mousemove',  draw);
+  canvas.removeEventListener('mouseup',    endDraw);
+  canvas.removeEventListener('mouseleave', endDraw);
+  canvas.addEventListener('mousedown',  startDraw);
+  canvas.addEventListener('mousemove',  draw);
+  canvas.addEventListener('mouseup',    endDraw);
+  canvas.addEventListener('mouseleave', endDraw);
+  canvas.addEventListener('touchstart', e => { e.preventDefault(); startDraw(touchCoords(e, canvas)); }, { passive:false });
+  canvas.addEventListener('touchmove',  e => { e.preventDefault(); draw(touchCoords(e, canvas)); },      { passive:false });
+  canvas.addEventListener('touchend',   e => { e.preventDefault(); endDraw(); },                         { passive:false });
+}
+
+function touchCoords(e, canvas) {
+  const t    = e.touches[0];
+  const rect = canvas.getBoundingClientRect();
+  return {
+    offsetX: (t.clientX - rect.left)  * (canvas.width  / rect.width),
+    offsetY: (t.clientY - rect.top)   * (canvas.height / rect.height),
+  };
+}
+
+function startDraw(e) {
+  if (!state.drawMode) return;
+  state.drawing = true;
+  state.lastX   = e.offsetX;
+  state.lastY   = e.offsetY;
+  state.currentStroke = [{ x: state.lastX, y: state.lastY }];
+}
+
+function draw(e) {
+  if (!state.drawing || !state.drawMode) return;
+  const canvas = document.getElementById('canvas2');
+  const ctx    = canvas.getContext('2d');
+  const x = e.offsetX, y = e.offsetY;
+  ctx.beginPath();
+  ctx.moveTo(state.lastX, state.lastY);
+  ctx.lineTo(x, y);
+  ctx.strokeStyle = state.drawColor;
+  ctx.lineWidth   = state.brushSize;
+  ctx.lineCap     = 'round';
+  ctx.lineJoin    = 'round';
+  ctx.stroke();
+  state.currentStroke.push({ x, y });
+  state.lastX = x; state.lastY = y;
+}
+
+function endDraw() {
+  if (!state.drawing) return;
+  state.drawing = false;
+  if (state.currentStroke.length > 1) {
+    state.strokes.push({ points:[...state.currentStroke], color:state.drawColor, size:state.brushSize });
+  }
+  state.currentStroke = [];
+}
+
+function undoStroke() {
+  if (!state.strokes.length) { showToast('No hay trazos para deshacer'); return; }
+  state.strokes.pop();
+  const canvas = document.getElementById('canvas2');
+  const ctx    = canvas.getContext('2d');
+  if (state.img2Base) ctx.putImageData(state.img2Base, 0, 0);
+  for (const s of state.strokes) {
+    ctx.beginPath();
+    ctx.strokeStyle = s.color; ctx.lineWidth = s.size;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    s.points.forEach((pt, i) => i === 0 ? ctx.moveTo(pt.x, pt.y) : ctx.lineTo(pt.x, pt.y));
+    ctx.stroke();
+  }
+  showToast('Trazo deshecho');
+}
+
+/* =====================================================
+   FINALIZAR TRABAJO
+===================================================== */
+function finishWork() {
+  if (!state.img1 && !state.img2) { showToast('Agrega al menos una imagen'); return; }
+  const c1 = document.getElementById('canvas1');
+  const c2 = document.getElementById('canvas2');
+  const outH   = Math.max(state.img1 ? c1.height : 0, state.img2 ? c2.height : 0, 400);
+  const panelW = Math.round(outH * 9 / 16);
+  const outW   = panelW * 2;
+  const out    = document.createElement('canvas');
+  out.width    = outW; out.height = outH;
+  const ctx    = out.getContext('2d');
+
+  ctx.fillStyle = '#f0f2f5';
+  ctx.fillRect(0, 0, outW, outH);
+
+  if (state.img1) {
+    ctx.drawImage(c1, 0, 0, c1.width, c1.height, 0, 0, panelW, outH);
+  } else {
+    ctx.fillStyle = '#e5e7eb'; ctx.fillRect(0, 0, panelW, outH);
+    ctx.fillStyle = '#667085'; ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('Sin imagen', panelW / 2, outH / 2);
+  }
+
+  // Divisor
+  ctx.fillStyle = '#d9dee7'; ctx.fillRect(panelW - 1, 0, 2, outH);
+
+  if (state.img2) {
+    ctx.drawImage(c2, 0, 0, c2.width, c2.height, panelW, 0, panelW, outH);
+  } else {
+    ctx.fillStyle = '#e5e7eb'; ctx.fillRect(panelW, 0, panelW, outH);
+    ctx.fillStyle = '#667085'; ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('Sin imagen', panelW + panelW / 2, outH / 2);
+  }
+
+  state.resultDataUrl = out.toDataURL('image/jpeg', 0.95);
+  document.getElementById('resultImg').src = state.resultDataUrl;
+  document.getElementById('resultOverlay').classList.add('visible');
+}
+
+/* =====================================================
+   GUARDAR — nativo si corre en Capacitor, descarga si no
+===================================================== */
+async function saveResult() {
+  if (!state.resultDataUrl) return;
+
+  const btn = document.getElementById('btnSave');
+  const msg = document.getElementById('resultMsg');
+  btn.disabled = true;
+
+  // ── Modo cámara: Java ya guardó la foto completa en galería ──────────────
+  if (state.resultIsCamera) {
+    const folder = state.cameraFolder || 'Pictures/AutoManuales';
+    msg.textContent = '✓ Foto guardada en Galería → ' + folder;
+    showToast('Guardado en ' + folder + ' ✓');
+    btn.disabled = false;
+    return;
+  }
+
+  // ── Modo SCREEN 4: imagen compuesta generada por Canvas ──────────────────
+  const ts       = new Date().toISOString().replace(/[:.-]/g, '').slice(0, 15);
+  const fileName = 'AutoManuales_' + ts + '.jpg';
+
+  if (
+    typeof window !== 'undefined' &&
+    window.Capacitor &&
+    window.Capacitor.isNativePlatform()
+  ) {
+    try {
+      const plugin = window.Capacitor.Plugins.AutoManualesDevice;
+
+      if (!plugin || typeof plugin.saveImage !== 'function') {
+        throw new Error('El plugin AutoManualesDevice no está disponible.');
+      }
+
+      const result = await plugin.saveImage({
+        imageBase64: state.resultDataUrl,
+        fileName:    fileName,
+      });
+
+      msg.textContent = '✓ Guardado en Galería → ' + result.folder;
+      showToast('Guardado en ' + result.folder + ' ✓');
+
+    } catch (err) {
+      console.error('saveImage error:', err);
+      showToast('Error: ' + (err.message || String(err)));
+      msg.textContent = 'No se pudo guardar. Intenta nuevamente.';
+    } finally {
+      btn.disabled = false;
+    }
+    return;
+  }
+
+  // ── Navegador de escritorio (pruebas) ─────────────────────────────────────
+  try {
+    const a    = document.createElement('a');
+    a.href     = state.resultDataUrl;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    showToast('Imagen descargada ✓');
+  } catch (err) {
+    showToast('Error al descargar: ' + err.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function closeResult() {
+  document.getElementById('resultOverlay').classList.remove('visible');
+  state.resultIsCamera = false;
+  state.cameraFolder   = null;
+}
+
+/* =====================================================
+   TOAST
+===================================================== */
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+</script>
+</body>
+</html>

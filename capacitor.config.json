@@ -1,0 +1,10 @@
+{
+  "appId": "com.automanuales.app",
+  "appName": "AutoManuales",
+  "webDir": "www",
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    }
+  }
+}
