@@ -1,6 +1,6 @@
 # AutoManualesApp
 
-Aplicación Android desarrollada con **Capacitor** que ayuda a los usuarios a encontrar información específica de su vehículo directamente desde el manual del propietario: dónde está la etiqueta VIN, cómo abrir la tapa de gasolina, y más — sin tener que buscar en un PDF de 400 páginas.
+Aplicación Android desarrollada con **Capacitor** que ayuda a los usuarios a encontrar información específica de su vehículo directamente desde el manual del propietario: dónde está la etiqueta VIN, cómo abrir la tapa de gasolina, y más — sin tener que buscar en un PDF de 400 páginas. [![Descargar APK](https://img.shields.io/badge/Descargar-APK-brightgreen?style=for-the-badge&logo=android)](https://github.com/KnryK/Buscador-de-Manuales-de-Vehiculos/releases/latest/download/app-release.apk)
 
 <p align="center">
   <img src="docs/screenshots/busqueda.jpeg" width="220" alt="Búsqueda de vehículo" />
