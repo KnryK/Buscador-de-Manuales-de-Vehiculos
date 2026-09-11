@@ -4,7 +4,6 @@ Aplicación Android desarrollada con **Capacitor** que ayuda a los usuarios a en
 
 <p align="center">
   <img src="docs/screenshots/busqueda.jpeg" width="220" alt="Búsqueda de vehículo" />
-  <img src="docs/screenshots/cargando.jpeg" width="220" alt="Pantalla de carga" />
   <img src="docs/screenshots/resultado-manual.jpeg" width="220" alt="Resultado del manual" />
   <img src="docs/screenshots/herramientas-camara.jpeg" width="220" alt="Herramientas de cámara" />
 </p>
